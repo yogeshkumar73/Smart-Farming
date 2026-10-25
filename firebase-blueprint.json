@@ -1,0 +1,434 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Public collaborator profile without PII for real-time presence and task assignment.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Collaborator display name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "description": "Agronomic role in the platform.",
+          "enum": ["farmer", "advisor", "technician"]
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred UI language code.",
+          "enum": ["en", "hi", "es"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "role", "language", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII record for a user (email and phone).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified user email address.",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional SMS/voice notification phone number.",
+          "minLength": 0,
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator lookup document.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Admin user UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        }
+      },
+      "required": ["uid", "createdAt"]
+    },
+    "Farm": {
+      "title": "Farm",
+      "description": "Registered agricultural farm managed by an owner and team.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the farmer who owns this farm.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Farm name.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "district": {
+          "type": "string",
+          "description": "District location.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "state": {
+          "type": "string",
+          "description": "State or province location.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "soilType": {
+          "type": "string",
+          "description": "Dominant soil classification.",
+          "enum": ["loamy", "clay", "sandy", "silty", "black_cotton", "alluvial"]
+        },
+        "areaHectares": {
+          "type": "number",
+          "description": "Total farm area in hectares."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["ownerId", "name", "district", "state", "soilType", "areaHectares", "createdAt", "updatedAt"]
+    },
+    "Field": {
+      "title": "Field",
+      "description": "A specific crop parcel within a farm.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the farm owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "farmId": {
+          "type": "string",
+          "description": "Parent farm ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Field parcel name.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "crop": {
+          "type": "string",
+          "description": "Primary crop planted.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "variety": {
+          "type": "string",
+          "description": "Seed or crop variety.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "sowingDate": {
+          "type": "string",
+          "description": "ISO date of sowing.",
+          "minLength": 8,
+          "maxLength": 32
+        },
+        "growthStage": {
+          "type": "string",
+          "description": "Current phenological stage.",
+          "enum": ["germination", "seedling", "vegetative", "tillering", "flowering", "grain_filling", "maturity"]
+        },
+        "areaHectares": {
+          "type": "number",
+          "description": "Field area in hectares."
+        },
+        "moistureThreshold": {
+          "type": "number",
+          "description": "Configured minimum soil moisture threshold percentage."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["ownerId", "farmId", "name", "crop", "variety", "sowingDate", "growthStage", "areaHectares", "moistureThreshold", "createdAt", "updatedAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Collaborative agronomic or maintenance task linked to a farm/field and optional alert/prediction.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Creator UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "farmId": {
+          "type": "string",
+          "description": "Associated farm ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fieldId": {
+          "type": "string",
+          "description": "Associated field ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Actionable task title.",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed instructions, safety interlocks, and agronomic context.",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "category": {
+          "type": "string",
+          "description": "Task operational category.",
+          "enum": ["irrigation", "scouting", "sensor_maintenance", "soil_nutrition", "disease_management"]
+        },
+        "priority": {
+          "type": "string",
+          "description": "Task urgency level.",
+          "enum": ["low", "medium", "high"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Workflow state (completed is terminal for non-owners).",
+          "enum": ["todo", "in_progress", "completed"]
+        },
+        "assigneeName": {
+          "type": "string",
+          "description": "Assigned farmer, advisor, or technician name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "assigneeId": {
+          "type": "string",
+          "description": "UID of the assignee.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Due date string.",
+          "minLength": 8,
+          "maxLength": 32
+        },
+        "linkedAlertId": {
+          "type": "string",
+          "description": "Optional alert ID that triggered this task.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["ownerId", "farmId", "fieldId", "title", "description", "category", "priority", "status", "assigneeName", "assigneeId", "dueDate", "createdAt", "updatedAt"]
+    },
+    "TaskComment": {
+      "title": "TaskComment",
+      "description": "Real-time field note or collaboration comment on a task.",
+      "type": "object",
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "description": "Parent task ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Comment author UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Comment author display name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "authorRole": {
+          "type": "string",
+          "description": "Author role.",
+          "enum": ["farmer", "advisor", "technician"]
+        },
+        "content": {
+          "type": "string",
+          "description": "Comment text.",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["taskId", "authorId", "authorName", "authorRole", "content", "createdAt"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Farmer feedback on a prediction or alert to close the Learn loop.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Farmer UID submitting feedback.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "predictionId": {
+          "type": "string",
+          "description": "Target prediction or alert ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fieldId": {
+          "type": "string",
+          "description": "Associated field ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "farmerLabel": {
+          "type": "string",
+          "description": "Structured evaluation label from field inspection.",
+          "enum": ["accurate_helpful", "false_alarm", "too_late", "needs_calibration"]
+        },
+        "comment": {
+          "type": "string",
+          "description": "Farmer observation notes.",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["ownerId", "predictionId", "fieldId", "farmerLabel", "comment", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/public/{profileId}": {
+      "schema": "UserPublicProfile",
+      "description": "Public user profile for team collaboration and presence."
+    },
+    "/users/{userId}/private/{infoId}": {
+      "schema": "UserPrivateInfo",
+      "description": "Isolated private PII data for a user."
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminRecord",
+      "description": "System administrator registry."
+    },
+    "/farms/{farmId}": {
+      "schema": "Farm",
+      "description": "Registered farms."
+    },
+    "/fields/{fieldId}": {
+      "schema": "Field",
+      "description": "Registered crop fields belonging to farms."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Collaborative field and maintenance tasks."
+    },
+    "/tasks/{taskId}/comments/{commentId}": {
+      "schema": "TaskComment",
+      "description": "Subcollection of comments on a specific task."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Farmer feedback records for ML governance."
+    }
+  }
+}

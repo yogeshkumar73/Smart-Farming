@@ -1,0 +1,320 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'vipsp1414@gmail.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidUserPublicProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'role', 'language', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'role', 'language', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+        data.role is string && data.role.size() <= 20 && (data.role == 'farmer' || data.role == 'advisor' || data.role == 'technician') &&
+        data.language is string && data.language.size() <= 10 && (data.language == 'en' || data.language == 'hi' || data.language == 'es') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'phone', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidFarm(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'district', 'state', 'soilType', 'areaHectares', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'name', 'district', 'state', 'soilType', 'areaHectares', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+        data.district is string && data.district.size() >= 2 && data.district.size() <= 80 &&
+        data.state is string && data.state.size() >= 2 && data.state.size() <= 80 &&
+        data.soilType is string && data.soilType.size() <= 30 &&
+        (data.soilType == 'loamy' || data.soilType == 'clay' || data.soilType == 'sandy' || data.soilType == 'silty' || data.soilType == 'black_cotton' || data.soilType == 'alluvial') &&
+        (data.areaHectares is int || data.areaHectares is float) && data.areaHectares > 0 && data.areaHectares <= 50000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidField(data) {
+      return data.keys().hasAll(['ownerId', 'farmId', 'name', 'crop', 'variety', 'sowingDate', 'growthStage', 'areaHectares', 'moistureThreshold', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'farmId', 'name', 'crop', 'variety', 'sowingDate', 'growthStage', 'areaHectares', 'moistureThreshold', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.farmId is string && data.farmId.size() >= 1 && data.farmId.size() <= 128 && data.farmId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+        data.crop is string && data.crop.size() >= 2 && data.crop.size() <= 60 &&
+        data.variety is string && data.variety.size() >= 1 && data.variety.size() <= 80 &&
+        data.sowingDate is string && data.sowingDate.size() >= 8 && data.sowingDate.size() <= 32 &&
+        data.growthStage is string && data.growthStage.size() <= 30 &&
+        (data.growthStage == 'germination' || data.growthStage == 'seedling' || data.growthStage == 'vegetative' || data.growthStage == 'tillering' || data.growthStage == 'flowering' || data.growthStage == 'grain_filling' || data.growthStage == 'maturity') &&
+        (data.areaHectares is int || data.areaHectares is float) && data.areaHectares > 0 && data.areaHectares <= 10000 &&
+        (data.moistureThreshold is int || data.moistureThreshold is float) && data.moistureThreshold >= 5 && data.moistureThreshold <= 90 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['ownerId', 'farmId', 'fieldId', 'title', 'description', 'category', 'priority', 'status', 'assigneeName', 'assigneeId', 'dueDate', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'farmId', 'fieldId', 'title', 'description', 'category', 'priority', 'status', 'assigneeName', 'assigneeId', 'dueDate', 'linkedAlertId', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.farmId is string && data.farmId.size() >= 1 && data.farmId.size() <= 128 && data.farmId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.fieldId is string && data.fieldId.size() >= 1 && data.fieldId.size() <= 128 && data.fieldId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.title is string && data.title.size() >= 3 && data.title.size() <= 160 &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 1000 &&
+        data.category is string && data.category.size() <= 32 &&
+        (data.category == 'irrigation' || data.category == 'scouting' || data.category == 'sensor_maintenance' || data.category == 'soil_nutrition' || data.category == 'disease_management') &&
+        data.priority is string && data.priority.size() <= 16 &&
+        (data.priority == 'low' || data.priority == 'medium' || data.priority == 'high') &&
+        data.status is string && data.status.size() <= 20 &&
+        (data.status == 'todo' || data.status == 'in_progress' || data.status == 'completed') &&
+        data.assigneeName is string && data.assigneeName.size() >= 1 && data.assigneeName.size() <= 80 &&
+        data.assigneeId is string && data.assigneeId.size() >= 1 && data.assigneeId.size() <= 128 && data.assigneeId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.dueDate is string && data.dueDate.size() >= 8 && data.dueDate.size() <= 32 &&
+        (!('linkedAlertId' in data) || (data.linkedAlertId is string && data.linkedAlertId.size() >= 1 && data.linkedAlertId.size() <= 128 && data.linkedAlertId.matches('^[a-zA-Z0-9_\\-]+$'))) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTaskComment(data, taskId) {
+      return data.keys().hasAll(['taskId', 'authorId', 'authorName', 'authorRole', 'content', 'createdAt']) &&
+        data.keys().hasOnly(['taskId', 'authorId', 'authorName', 'authorRole', 'content', 'createdAt']) &&
+        data.taskId is string && data.taskId.size() >= 1 && data.taskId.size() <= 128 && data.taskId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.taskId == taskId &&
+        data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 && data.authorId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.authorId == request.auth.uid &&
+        data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+        data.authorRole is string && data.authorRole.size() <= 20 &&
+        (data.authorRole == 'farmer' || data.authorRole == 'advisor' || data.authorRole == 'technician') &&
+        data.content is string && data.content.size() >= 1 && data.content.size() <= 600 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['ownerId', 'predictionId', 'fieldId', 'farmerLabel', 'comment', 'createdAt']) &&
+        data.keys().hasOnly(['ownerId', 'predictionId', 'fieldId', 'farmerLabel', 'comment', 'createdAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.predictionId is string && data.predictionId.size() >= 1 && data.predictionId.size() <= 128 && data.predictionId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.fieldId is string && data.fieldId.size() >= 1 && data.fieldId.size() <= 128 && data.fieldId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.farmerLabel is string && data.farmerLabel.size() <= 32 &&
+        (data.farmerLabel == 'accurate_helpful' || data.farmerLabel == 'false_alarm' || data.farmerLabel == 'too_late' || data.farmerLabel == 'needs_calibration') &&
+        data.comment is string && data.comment.size() >= 1 && data.comment.size() <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    // 4. Collection Match Blocks
+    match /users/{userId}/public/{profileId} {
+      allow get: if isSignedIn() && isValidId(userId) && isValidId(profileId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(userId) && isValidId(profileId) && isOwner(userId) &&
+        isValidUserPublicProfile(incoming()) &&
+        incoming().role == 'farmer' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(userId) && isValidId(profileId) && isValidUserPublicProfile(incoming()) && (
+        isAdmin() ||
+        (isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().role == existing().role &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'language', 'updatedAt']))
+      );
+      allow delete: if isAdmin() && isValidId(userId) && isValidId(profileId);
+    }
+
+    match /users/{userId}/private/{infoId} {
+      allow get: if isSignedIn() && isValidId(userId) && isValidId(infoId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(userId) && isValidId(infoId) && isOwner(userId) &&
+        isValidUserPrivateInfo(incoming()) &&
+        incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(userId) && isValidId(infoId) && isValidUserPrivateInfo(incoming()) && (
+        isAdmin() ||
+        (isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'phone']))
+      );
+      allow delete: if isAdmin() && isValidId(userId) && isValidId(infoId);
+    }
+
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isAdmin() && isValidId(adminId) && isValidAdminRecord(incoming()) && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(adminId);
+    }
+
+    match /farms/{farmId} {
+      allow get: if isSignedIn() && isValidId(farmId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(farmId) &&
+        isValidFarm(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(farmId) && isValidFarm(incoming()) && (
+        isAdmin() ||
+        (existing().ownerId == request.auth.uid &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'district', 'state', 'soilType', 'areaHectares', 'updatedAt']))
+      );
+      allow delete: if isVerifiedUser() && isValidId(farmId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /fields/{fieldId} {
+      allow get: if isSignedIn() && isValidId(fieldId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(fieldId) &&
+        isValidField(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/farms/$(incoming().farmId)) &&
+        get(/databases/$(database)/documents/farms/$(incoming().farmId)).data.ownerId == request.auth.uid;
+      allow update: if isVerifiedUser() && isValidId(fieldId) && isValidField(incoming()) && (
+        isAdmin() ||
+        (existing().ownerId == request.auth.uid &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().farmId == existing().farmId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'crop', 'variety', 'sowingDate', 'growthStage', 'areaHectares', 'moistureThreshold', 'updatedAt']))
+      );
+      allow delete: if isVerifiedUser() && isValidId(fieldId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isValidId(taskId) && (
+        existing().ownerId == request.auth.uid ||
+        existing().assigneeId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.assigneeId == request.auth.uid
+      );
+      allow create: if isVerifiedUser() && isValidId(taskId) &&
+        isValidTask(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status != 'completed' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/farms/$(incoming().farmId)) &&
+        exists(/databases/$(database)/documents/fields/$(incoming().fieldId));
+      allow update: if isVerifiedUser() && isValidId(taskId) && isValidTask(incoming()) && (
+        isAdmin() ||
+        // Tier 1: Task Owner can update task details while task is not in terminal 'completed' state
+        (existing().ownerId == request.auth.uid &&
+          existing().status != 'completed' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().farmId == existing().farmId &&
+          incoming().fieldId == existing().fieldId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'category', 'priority', 'status', 'assigneeName', 'assigneeId', 'dueDate', 'updatedAt'])) ||
+        // Tier 2: Assignee can only advance task status while not in terminal 'completed' state
+        (existing().assigneeId == request.auth.uid &&
+          existing().status != 'completed' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().farmId == existing().farmId &&
+          incoming().fieldId == existing().fieldId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+      );
+      allow delete: if isVerifiedUser() && isValidId(taskId) && (existing().ownerId == request.auth.uid || isAdmin());
+
+      match /comments/{commentId} {
+        allow get: if isSignedIn() && isValidId(taskId) && isValidId(commentId) && (
+          existing().authorId == request.auth.uid ||
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.ownerId == request.auth.uid ||
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.assigneeId == request.auth.uid ||
+          isAdmin()
+        );
+        allow list: if isSignedIn() && resource.data.authorId == request.auth.uid;
+        allow create: if isVerifiedUser() && isValidId(taskId) && isValidId(commentId) &&
+          isValidTaskComment(incoming(), taskId) &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/tasks/$(taskId)) && (
+            get(/databases/$(database)/documents/tasks/$(taskId)).data.ownerId == request.auth.uid ||
+            get(/databases/$(database)/documents/tasks/$(taskId)).data.assigneeId == request.auth.uid ||
+            isAdmin()
+          );
+        allow update: if isVerifiedUser() && isValidId(taskId) && isValidId(commentId) &&
+          isValidTaskComment(incoming(), taskId) && (
+            isAdmin() ||
+            (existing().authorId == request.auth.uid &&
+              incoming().authorId == existing().authorId &&
+              incoming().taskId == existing().taskId &&
+              incoming().createdAt == existing().createdAt &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['content']))
+          );
+        allow delete: if isVerifiedUser() && isValidId(taskId) && isValidId(commentId) && (
+          existing().authorId == request.auth.uid || isAdmin()
+        );
+      }
+    }
+
+    match /feedback/{feedbackId} {
+      allow get: if isSignedIn() && isValidId(feedbackId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(feedbackId) &&
+        isValidFeedback(incoming()) &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/fields/$(incoming().fieldId));
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(feedbackId);
+    }
+  }
+}

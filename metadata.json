@@ -1,0 +1,6 @@
+{
+  "name": "AgriPulse Command — Smart Precision Agriculture & Collaborative Task Platform",
+  "description": "Farmer-first precision agriculture decision-support and real-time collaborative task management platform implementing the Sense → Validate → Store → Understand → Predict → Decide → Alert → Learn blueprint.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
