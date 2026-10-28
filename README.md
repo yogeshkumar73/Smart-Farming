@@ -1,113 +1,102 @@
+# AgriPulse Command — Smart Precision Agriculture
 
-# AgriPulse Command
+AgriPulse Command is a farmer-first precision-agriculture decision-support, telemetry acquisition, and field-team collaboration platform implementing the full **Smart Precision Agriculture Module-Wise Design Blueprint**:
 
-AgriPulse Command is a farmer-first precision-agriculture dashboard and field-team collaboration app. It brings farm records, sensor telemetry, agronomic decision support, alerts, leaf-disease analysis, and operational tasks together in one workspace.
+$$\text{Sense} \longrightarrow \text{Validate} \longrightarrow \text{Store} \longrightarrow \text{Understand} \longrightarrow \text{Predict} \longrightarrow \text{Decide} \longrightarrow \text{Alert} \longrightarrow \text{Learn}$$
 
-The project follows the blueprint workflow:
+---
 
-**Sense → Validate → Store → Understand → Predict → Decide → Alert → Learn**
+## 1. System Architecture & Functional Modules
 
-The full High-Level and Low-Level Design blueprint is available at [`public/assets/aistudio/Smart_Precision_Agriculture_Full_HLD_LLD_Blueprint_38164264.pdf`](public/assets/aistudio/Smart_Precision_Agriculture_Full_HLD_LLD_Blueprint_38164264.pdf). The analytics screen also links to this document.
+| Module ID | Module Name | Primary Responsibilities | APIs / Tech Stack |
+|---|---|---|---|
+| **M01** | **Identity & Access Management** | Farmer login, RBAC (farmer, advisor, technician, admin), JWT & session handling | `POST /api/v1/auth/login`, MongoDB `users` collection |
+| **M02** | **Farm Management** | Register and list farms, location, soil type, and hectare area | `GET/POST /api/v1/farms`, MongoDB `farms` collection |
+| **M03** | **Field & Crop Management** | Parcel boundaries, crop type, variety, sowing date, growth stage, soil characteristics | `GET /api/v1/fields/{id}`, `GET/POST /api/v1/farms/{id}/fields` |
+| **M04** | **Device Registry & Health** | Device registration, battery %, RSSI dBm, calibration offsets, health status | `GET/POST /api/v1/sensors/register`, `sensors` collection |
+| **M05** | **Firmware & Sensor Acquisition** | ESP32 C++ firmware, capacitive soil moisture, DHT22, rain gauge, RS485 NPK, SPIFFS offline buffer | Arduino C++ (`firmware/esp32_smart_agriculture/`) |
+| **M06** | **IoT Messaging & Ingestion** | MQTT topic `farm/{id}/field/{id}/sensor/{id}`, schema validation, duplicate filtering, HTTP fallback | `POST /api/v1/readings`, `POST /api/v1/readings/sync-batch` |
+| **M07** | **Telemetry Storage & Trends** | Indexed telemetry storage, historical queries by field and time range, trend analysis | `GET /api/v1/readings`, `sensor_readings` collection |
+| **M08** | **Irrigation Prediction** | Rolling 12-24h soil moisture trends, growth stage sensitivity multipliers, evapotranspiration | `IrrigationMLModel`, `predictions` collection |
+| **M09** | **Crop & Environment Risk** | Fungal incubation detection (sustained RH > 80% + 20-28°C), heat stress, frost warnings | `CropRiskMLModel`, `predictions` collection |
+| **M10** | **Leaf Disease Vision** | Quality gate (blur, exposure, resolution), disease inference, $\ge 70\%$ confidence threshold | `POST /api/v1/disease/analyze` |
+| **M11** | **Decision & Safety Engine** | Agronomic safety boundary, human-in-the-loop interlock before pump energizing, low-confidence lockout | `DecisionAndSafetyEngine` |
+| **M12** | **Alerts & Recommendations** | Plain-language actionable alerts, explanation, next steps, idempotent deduplication | `GET /api/v1/alerts`, `PATCH /api/v1/alerts/{id}` |
+| **M13** | **Notification Delivery** | Dashboard in-app alerts, SMS dispatch simulator, push alerts | `GET/POST /api/v1/notifications` |
+| **M14** | **Analytics & Reporting** | Soil moisture vs. threshold trends, 24h averages, 7-day rainfall, farm health cards | `GET /api/v1/analytics/{field_id}` |
+| **M15** | **Feedback & Model Governance** | Farmer feedback collection (accurate/helpful, false alarm, needs calibration), model traceability | `POST /api/v1/feedback`, `feedback` collection |
+| **M16** | **Security & Operations** | TLS/MQTT authentication, rate limiting, health observability | `GET /health` |
+| **M17** | **Testing & Field Validation** | Unit, integration, calibration, duplicate rejection, and safety tests | `npm test`, `python backend/tests/test_backend_and_ml.py` |
 
-## Features
+---
 
-- **Dashboard:** At-a-glance field conditions, active agronomic alerts, and collaborative work.
-- **Farm and field registry:** Organize farms and parcels with crop, variety, area, growth stage, and soil context.
-- **Sensor telemetry:** View ESP32 sensor status and readings, including soil moisture, temperature, humidity, rainfall, and optional soil nutrients. The API accepts telemetry over HTTP and supports validation, calibration offsets, stale/out-of-range checks, and duplicate-reading detection.
-- **Agronomic decisions and alerts:** Evaluate irrigation needs and crop-environment risks, explain recommendations, track alert status, and capture farmer feedback.
-- **Leaf-disease analysis:** Submit a leaf image or specimen preset for a quality-gated analysis, review confidence and limitations, and create a follow-up task.
-- **Collaborative field tasks:** Assign and filter tasks, track their status and priority, add comments, and coordinate field-team presence over WebSockets.
-- **Analytics and blueprint reference:** Review field telemetry trends and open the engineering blueprint.
-- **Authentication and persistence integration:** Google sign-in and Firestore-backed task synchronization are provided through Firebase. English, Hindi, and Spanish UI translations are included.
+## 2. Appendix A — MongoDB Collection Schema
 
-The application starts with sample farms, fields, sensor readings, alerts, and tasks so the dashboard can be explored immediately. API and WebSocket domain state is held in server memory and resets when the server restarts; it is not a production database.
+- **`users`**: `_id`, `name`, `phone`, `language`, `role`, `created_at`
+- **`farms`**: `_id`, `user_id`, `name`, `location: {district, state}`, `soil_type`, `area`, `created_at`
+- **`fields`**: `_id`, `farm_id`, `crop`, `variety`, `sowing_date`, `growth_stage`, `area`, `moisture_threshold`, `soil_characteristics`
+- **`sensors`**: `_id`, `field_id`, `device_id`, `type`, `unit`, `status`, `calibration: {moisture_offset, temperature_offset}`, `last_seen`
+- **`sensor_readings`**: `_id`, `sensor_id`, `field_id`, `device_id`, `sequence`, `timestamp`, `moisture`, `temperature`, `humidity`, `rainfall`, `ph`, `nitrogen`, `phosphorus`, `potassium`, `transport`
+- **`predictions`**: `_id`, `field_id`, `timestamp`, `type`, `risk_score`, `confidence`, `severity`, `status`, `model_version`, `explanation`, `recommendation`
+- **`alerts`**: `_id`, `field_id`, `prediction_id`, `type`, `severity`, `message`, `recommendation`, `confidence`, `status`, `created_at`, `updated_at`, `occurrence_count`
+- **`feedback`**: `_id`, `prediction_id`, `field_id`, `farmer_label`, `comment`, `model_version`, `created_at`
 
-## Technology
+### Indexes
+- `sensor_readings`: Compound index on `(field_id, timestamp)` and unique index on `(device_id, sequence)`
+- `alerts`: Compound index on `(field_id, created_at)` and index on `(status)`
+- `predictions`: Compound index on `(field_id, timestamp)` and index on `(model_version)`
+- `sensors`: Unique index on `(device_id)` and index on `(field_id)`
 
-- React 19, TypeScript, and Vite
-- Tailwind CSS 4, Motion, and Lucide icons
-- Express and WebSockets (`ws`) for the development/API server and live collaboration
-- Firebase Authentication and Cloud Firestore
-- Google Gemini API for the server-side disease-analysis endpoint when configured
+---
 
-## Getting started
+## 3. Quickstart & Running the Application
 
-### Requirements
+### A. React / PWA Frontend & Node Server (TypeScript / Vite / Express)
+```bash
+# Install dependencies
+npm install --legacy-peer-deps
 
-- [Bun](https://bun.sh/) (recommended; the repository includes `bun.lock`)
-- A Firebase project configured for Google Authentication and Cloud Firestore to use Firebase-backed features
-- A Gemini API key to enable Gemini-powered leaf analysis
+# Run Unit Tests
+npm test
 
-### Install and run
+# Run Typecheck & Build
+npm run lint
+npm run build
 
-```sh
-bun install
+# Start Full Stack App & Dev Server (Port 3000)
+npm run dev
 ```
 
-On Windows PowerShell, copy the example environment file:
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-```powershell
-Copy-Item .env.example .env
+---
+
+### B. Python FastAPI Backend & ML Engine
+```bash
+# Install Python dependencies
+pip install -r backend/requirements.txt
+
+# Run Python M17 Test Suite
+python backend/tests/test_backend_and_ml.py
+
+# Launch FastAPI Server (Port 8000)
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+Interactive Swagger API documentation: [http://localhost:8000/docs](http://localhost:8000/docs).
 
-Set `GEMINI_API_KEY` in `.env` to enable Gemini-powered leaf analysis. Without a key, the disease-analysis workflow uses its deterministic demo results instead.
+---
 
-The Firebase web configuration is read from [`firebase-applet-config.json`](firebase-applet-config.json). Point it at a Firebase project where Google sign-in is enabled and the Firestore rules in [`firestore.rules`](firestore.rules) are deployed. Do not put server credentials or other private secrets in client-side configuration.
+### C. ESP32 Arduino Firmware (M05)
+Open `firmware/esp32_smart_agriculture/esp32_smart_agriculture.ino` in Arduino IDE or PlatformIO.
+Configure your Wi-Fi SSID and MQTT broker IP, then flash to any standard ESP32 development board.
 
-Start the development server:
+---
 
-```sh
-bun run dev
-```
+## 4. Key Acceptance Checks (Appendix C)
 
-Open [http://localhost:3000](http://localhost:3000). The same server runs the Vite development app, the `/api/v1/*` HTTP endpoints, and the `/ws` WebSocket endpoint.
-
-### Production build
-
-```sh
-bun run build
-bun run start
-```
-
-`start` serves the built app and API on port `3000`.
-
-## Project layout
-
-```text
-.
-├── public/
-│   └── assets/aistudio/       # Agriculture engineering blueprint PDF
-├── src/
-│   ├── components/
-│   │   ├── alerts/            # Alerts and farmer feedback
-│   │   ├── analytics/         # Telemetry trends and blueprint reference
-│   │   ├── disease/           # Leaf-image analysis workflow
-│   │   ├── farms/             # Farm and field registry
-│   │   ├── sensors/           # Sensor devices and telemetry
-│   │   └── tasks/             # Collaborative task workflow
-│   ├── types/agriculture.ts   # Shared domain types
-│   ├── utils/
-│   │   ├── agronomyEngine.ts  # Telemetry validation and decision logic
-│   │   ├── i18n.ts            # English, Hindi, and Spanish translations
-│   │   └── seedData.ts        # Demo farms, fields, readings, alerts, and tasks
-│   ├── App.tsx                # Application state and feature wiring
-│   └── firebase.ts            # Firebase initialization and helpers
-├── firestore.rules            # Firestore access-control rules
-├── firestore.rules.test.ts    # Static Firestore rules regression tests
-├── firebase-blueprint.json    # Firestore entities and access blueprint
-├── security_spec.md           # Data invariants and security scenarios
-└── server.ts                  # Express API, Gemini integration, and WebSockets
-```
-
-## API overview
-
-The Express server exposes versioned routes under `/api/v1`, including endpoints for farms and fields, sensors and readings, predictions and alerts, feedback, disease analysis, analytics, and tasks with comments. The WebSocket endpoint at `/ws` broadcasts state and collaboration events. The server currently uses seeded in-memory state for these API resources.
-
-## Checks
-
-```sh
-bun run lint
-bun run build
-```
-
-The repository also contains Node.js test-runner tests in `src/utils/agronomyEngine.test.ts` and `firestore.rules.test.ts`.
+- [x] **Sensor calibration & range validation**: Raw readings calibrated with offsets and boundary-checked.
+- [x] **Network loss & offline synchronization**: SPIFFS circular buffer holds offline telemetry; replay API applies idempotent `(device_id, sequence)` deduplication.
+- [x] **REST APIs tested**: Authentication, farms, fields, sensors, readings, predictions, alerts, analytics, feedback.
+- [x] **Safety boundary**: Confidence gating ensures predictions below 70% confidence do not trigger automated high-impact actions; pump control mandates human confirmation.
+- [x] **Alert deduplication**: Deduplicates active alerts by field and type to prevent alarm fatigue.
+- [x] **PWA & Field Readiness**: Service Worker caching, manifest.json, multi-language UI (English, Hindi, Spanish).

@@ -1,0 +1,25 @@
+{
+  "short_name": "AgriPulse",
+  "name": "AgriPulse — Smart Precision Agriculture",
+  "description": "Farmer-first precision agriculture decision-support and telemetry platform implementing Sense → Validate → Store → Understand → Predict → Decide → Alert → Learn",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#064e3b",
+  "theme_color": "#16a34a",
+  "categories": ["agriculture", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
