@@ -307,11 +307,14 @@ export const TaskCollaborationView: React.FC<TaskCollaborationViewProps> = ({
                 htmlFor="task-title-input"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Task Title (3–160 chars)
+                Task Title (3–160 chars) *
               </label>
               <input
                 id="task-title-input"
                 type="text"
+                required
+                minLength={3}
+                maxLength={160}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., Verify Root-Zone Moisture & Open North Canal Valve"
@@ -389,11 +392,12 @@ export const TaskCollaborationView: React.FC<TaskCollaborationViewProps> = ({
                 htmlFor="task-assignee-input"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Assigned Collaborator
+                Assigned Collaborator *
               </label>
               <input
                 id="task-assignee-input"
                 type="text"
+                required
                 value={assigneeName}
                 onChange={(e) => setAssigneeName(e.target.value)}
                 placeholder="e.g., Rajesh Patel (Lead Farmer)"
@@ -406,11 +410,12 @@ export const TaskCollaborationView: React.FC<TaskCollaborationViewProps> = ({
                 htmlFor="task-duedate-input"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Target Completion Date
+                Target Completion Date *
               </label>
               <input
                 id="task-duedate-input"
                 type="date"
+                required
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"

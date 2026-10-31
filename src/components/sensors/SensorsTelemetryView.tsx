@@ -240,14 +240,16 @@ export const SensorsTelemetryView: React.FC<SensorsTelemetryViewProps> = ({
               htmlFor="new-device-id"
               className="block text-xs font-semibold text-slate-700 mb-1"
             >
-              Device ID
+              Device ID *
             </label>
             <input
               id="new-device-id"
               type="text"
+              required
+              minLength={3}
               value={newDeviceId}
               onChange={(e) => setNewDeviceId(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -415,14 +417,15 @@ export const SensorsTelemetryView: React.FC<SensorsTelemetryViewProps> = ({
                 htmlFor="sim-sequence"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Sequence # (Dedup Key)
+                Sequence # (Dedup Key) *
               </label>
               <input
                 id="sim-sequence"
                 type="number"
+                required
                 value={sequence}
                 onChange={(e) => setSequence(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg"
+                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
               />
             </div>
 
@@ -431,15 +434,16 @@ export const SensorsTelemetryView: React.FC<SensorsTelemetryViewProps> = ({
                 htmlFor="sim-moisture"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Soil Moisture (%)
+                Soil Moisture (%) *
               </label>
               <input
                 id="sim-moisture"
                 type="number"
                 step="0.1"
+                required
                 value={soilMoisture}
                 onChange={(e) => setSoilMoisture(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg"
+                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
               />
             </div>
 
@@ -448,15 +452,16 @@ export const SensorsTelemetryView: React.FC<SensorsTelemetryViewProps> = ({
                 htmlFor="sim-temp"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Temperature (°C)
+                Temperature (°C) *
               </label>
               <input
                 id="sim-temp"
                 type="number"
                 step="0.1"
+                required
                 value={temperature}
                 onChange={(e) => setTemperature(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg"
+                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
               />
             </div>
 
@@ -465,15 +470,16 @@ export const SensorsTelemetryView: React.FC<SensorsTelemetryViewProps> = ({
                 htmlFor="sim-humidity"
                 className="block text-xs font-semibold text-slate-700 mb-1"
               >
-                Humidity (%)
+                Humidity (%) *
               </label>
               <input
                 id="sim-humidity"
                 type="number"
                 step="0.1"
+                required
                 value={humidity}
                 onChange={(e) => setHumidity(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg"
+                className="w-full px-3 py-1.5 text-xs font-mono tabular-nums border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
               />
             </div>
 

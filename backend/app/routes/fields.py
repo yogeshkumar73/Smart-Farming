@@ -29,10 +29,12 @@ async def update_field(field_id: str, payload: FieldUpdate):
         raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": f"Field {field_id} not found"})
 
     updates = {}
-    if payload.growth_stage:
-        updates["growth_stage"] = payload.growth_stage
-    if payload.moisture_threshold is not None:
-        updates["moisture_threshold"] = payload.moisture_threshold
+    growth_stage = payload.growthStage or payload.growth_stage
+    if growth_stage:
+        updates["growth_stage"] = growth_stage
+    moisture_threshold = payload.moistureThreshold if payload.moistureThreshold is not None else payload.moisture_threshold
+    if moisture_threshold is not None:
+        updates["moisture_threshold"] = moisture_threshold
     if payload.crop:
         updates["crop"] = payload.crop
     if payload.variety:

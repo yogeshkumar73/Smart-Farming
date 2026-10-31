@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any, Literal
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel, Field as PydanticField, ConfigDict
 from datetime import datetime
 
 # ============================================================================
@@ -17,8 +17,7 @@ class User(BaseModel):
     role: UserRole = "farmer"
     created_at: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 class LoginRequest(BaseModel):
     name: Optional[str] = "Rajesh Patel"
@@ -47,7 +46,10 @@ class FarmCreate(BaseModel):
     state: Optional[str] = None
     location: Optional[Location] = None
     soil_type: Optional[SoilType] = "loamy"
+    soilType: Optional[SoilType] = None
     area_hectares: Optional[float] = 2.5
+    areaHectares: Optional[float] = None
+    area: Optional[float] = None
     ownerId: Optional[str] = "demo-farmer-01"
 
 class Farm(BaseModel):
@@ -59,8 +61,7 @@ class Farm(BaseModel):
     area: float
     created_at: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 # ============================================================================
 # M03 — Field & Crop Management (fields collection)
@@ -78,18 +79,25 @@ class SoilCharacteristics(BaseModel):
 
 class FieldCreate(BaseModel):
     farm_id: Optional[str] = None
+    farmId: Optional[str] = None
     name: str
     crop: str
     variety: str
-    sowing_date: str
-    growth_stage: GrowthStage = "seedling"
-    area: float = 1.0
-    moisture_threshold: float = 24.0
+    sowing_date: Optional[str] = None
+    sowingDate: Optional[str] = None
+    growth_stage: Optional[GrowthStage] = "seedling"
+    growthStage: Optional[GrowthStage] = None
+    area: Optional[float] = 1.0
+    areaHectares: Optional[float] = None
+    moisture_threshold: Optional[float] = 24.0
+    moistureThreshold: Optional[float] = None
     soil_characteristics: Optional[SoilCharacteristics] = None
 
 class FieldUpdate(BaseModel):
     growth_stage: Optional[GrowthStage] = None
+    growthStage: Optional[GrowthStage] = None
     moisture_threshold: Optional[float] = None
+    moistureThreshold: Optional[float] = None
     crop: Optional[str] = None
     variety: Optional[str] = None
 
@@ -106,8 +114,7 @@ class AgriField(BaseModel):
     soil_characteristics: Optional[SoilCharacteristics] = None
     created_at: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 # ============================================================================
 # M04 — Device Registry & Health (sensors collection)
@@ -139,8 +146,7 @@ class SensorDevice(BaseModel):
     battery_pct: Optional[int] = 95
     signal_rssi_dbm: Optional[int] = -68
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 # ============================================================================
 # M06 / M07 — Telemetry Ingestion & Storage (sensor_readings collection)
@@ -184,8 +190,7 @@ class SensorReading(BaseModel):
     transport: Literal["mqtt", "http_fallback", "offline_buffer_sync"] = "mqtt"
     received_at: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 # ============================================================================
 # M08 / M09 — Predictions (predictions collection)
@@ -208,8 +213,7 @@ class Prediction(BaseModel):
     explanation: str
     recommendation: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 # ============================================================================
 # M10 — Leaf Disease Vision
@@ -264,8 +268,7 @@ class Alert(BaseModel):
     resolved_at: Optional[str] = None
     occurrence_count: int = 1
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 # ============================================================================
 # M13 — Notification Delivery
@@ -319,5 +322,76 @@ class Feedback(BaseModel):
     comment: str
     created_at: str
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
+
+# ============================================================================
+# Collaborative Tasks & Safety Workflow
+# ============================================================================
+
+TaskCategory = Literal["irrigation", "scouting", "sensor_maintenance", "soil_nutrition", "disease_management"]
+TaskPriority = Literal["low", "medium", "high"]
+TaskStatus = Literal["todo", "in_progress", "completed"]
+
+class TaskComment(BaseModel):
+    id: str
+    author_id: str = PydanticField(..., alias="authorId")
+    author_name: str = PydanticField(..., alias="authorName")
+    author_role: Optional[UserRole] = PydanticField("farmer", alias="authorRole")
+    content: str
+    created_at: str = PydanticField(..., alias="createdAt")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+class TaskCreate(BaseModel):
+    id: Optional[str] = None
+    title: str
+    description: str
+    farm_id: Optional[str] = None
+    farmId: Optional[str] = None
+    field_id: Optional[str] = None
+    fieldId: Optional[str] = None
+    category: TaskCategory = "irrigation"
+    priority: TaskPriority = "high"
+    status: Optional[TaskStatus] = "todo"
+    assignee_name: Optional[str] = None
+    assigneeName: Optional[str] = "Rajesh Patel (Lead Farmer)"
+    assignee_id: Optional[str] = None
+    assigneeId: Optional[str] = "demo-farmer-01"
+    due_date: Optional[str] = None
+    dueDate: Optional[str] = None
+    owner_id: Optional[str] = None
+    ownerId: Optional[str] = "demo-farmer-01"
+    linked_alert_id: Optional[str] = None
+    linkedAlertId: Optional[str] = None
+    safety_interlock_required: Optional[bool] = None
+    safetyInterlockRequired: Optional[bool] = True
+
+class TaskUpdate(BaseModel):
+    status: Optional[TaskStatus] = None
+    safety_confirmed_by: Optional[str] = None
+    safetyConfirmedBy: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[TaskPriority] = None
+
+class Task(BaseModel):
+    id: str = PydanticField(..., alias="_id")
+    owner_id: str = PydanticField(..., alias="ownerId")
+    farm_id: str = PydanticField(..., alias="farmId")
+    field_id: str = PydanticField(..., alias="fieldId")
+    title: str
+    description: str
+    category: TaskCategory
+    priority: TaskPriority
+    status: TaskStatus
+    assignee_name: str = PydanticField(..., alias="assigneeName")
+    assignee_id: str = PydanticField(..., alias="assigneeId")
+    due_date: str = PydanticField(..., alias="dueDate")
+    linked_alert_id: Optional[str] = PydanticField(None, alias="linkedAlertId")
+    safety_interlock_required: bool = PydanticField(False, alias="safetyInterlockRequired")
+    safety_confirmed_by: Optional[str] = PydanticField(None, alias="safetyConfirmedBy")
+    comments: List[Dict[str, Any]] = []
+    created_at: str = PydanticField(..., alias="createdAt")
+    updated_at: str = PydanticField(..., alias="updatedAt")
+
+    model_config = ConfigDict(populate_by_name=True)

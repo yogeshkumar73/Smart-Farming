@@ -25,7 +25,8 @@ class Database:
         "sensor_readings": [],
         "predictions": [],
         "alerts": [],
-        "feedback": []
+        "feedback": [],
+        "tasks": []
     }
 
 db_instance = Database()
@@ -88,6 +89,10 @@ async def create_indexes():
         # sensors indexes
         await db_instance.db.sensors.create_index([("device_id", 1)], unique=True)
         await db_instance.db.sensors.create_index([("field_id", 1)])
+
+        # tasks indexes
+        await db_instance.db.tasks.create_index([("fieldId", 1)])
+        await db_instance.db.tasks.create_index([("status", 1)])
         
         logger.info("Successfully ensured MongoDB indexes from Appendix A.")
     except Exception as e:

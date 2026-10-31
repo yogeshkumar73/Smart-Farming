@@ -284,16 +284,18 @@ export const AlertsDecisionView: React.FC<AlertsDecisionViewProps> = ({
                           htmlFor={`fb-comment-${alert.id}`}
                           className="block text-xs font-medium text-slate-700 mb-1"
                         >
-                          Field Observation Note
+                          Field Observation Note *
                         </label>
                         <div className="flex gap-2">
                           <input
                             id={`fb-comment-${alert.id}`}
                             type="text"
+                            required
+                            minLength={2}
                             value={feedbackComment}
                             onChange={(e) => setFeedbackComment(e.target.value)}
                             placeholder="e.g., Checked 15cm depth near canal gate; soil was indeed dry..."
-                            className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg"
+                            className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
                           />
                           <button
                             type="submit"

@@ -34,6 +34,8 @@ async def seed_mongodb():
     await db.predictions.create_index([("model_version", 1)])
     await db.sensors.create_index([("device_id", 1)], unique=True)
     await db.sensors.create_index([("field_id", 1)])
+    await db.tasks.create_index([("fieldId", 1)])
+    await db.tasks.create_index([("status", 1)])
 
     print("Seeding initial farm, field, sensor, and reading records...")
     # Upsert Farm
@@ -88,6 +90,33 @@ async def seed_mongodb():
             "last_seen": "2026-10-28T10:00:00Z",
             "battery_pct": 94,
             "signal_rssi_dbm": -68
+        }},
+        upsert=True
+    )
+
+    # Upsert Tasks
+    await db.tasks.update_one(
+        {"_id": "TASK-001"},
+        {"$set": {
+            "_id": "TASK-001",
+            "id": "TASK-001",
+            "ownerId": "demo-farmer-01",
+            "farmId": "FARM-001",
+            "fieldId": "FIELD-001",
+            "title": "Irrigate North Canal Wheat (Light Furrow 35mm)",
+            "description": "Critical moisture deficit detected at flowering stage. Execute light furrow irrigation. Confirm manual valve checklist before pump actuation.",
+            "category": "irrigation",
+            "priority": "high",
+            "status": "todo",
+            "assigneeName": "Rajesh Patel (Lead Farmer)",
+            "assigneeId": "demo-farmer-01",
+            "dueDate": "2026-10-29",
+            "linkedAlertId": "ALERT-001",
+            "safetyInterlockRequired": True,
+            "safetyConfirmedBy": None,
+            "comments": [],
+            "createdAt": "2026-10-28T09:30:15Z",
+            "updatedAt": "2026-10-28T10:00:00Z"
         }},
         upsert=True
     )

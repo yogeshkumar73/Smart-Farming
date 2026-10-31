@@ -10,7 +10,7 @@ from backend.app.services.mqtt_service import mqtt_service
 from backend.app.routes.readings import validate_and_process_telemetry
 from backend.app.routes import (
     auth, farms, fields, sensors, readings, predictions,
-    disease, alerts, notifications, analytics, feedback
+    disease, alerts, notifications, analytics, feedback, tasks
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -136,6 +136,61 @@ def seed_initial_state():
             "occurrence_count": 1
         })
 
+    if "tasks" not in db_instance.memory_store or not db_instance.memory_store["tasks"]:
+        db_instance.memory_store["tasks"] = [
+            {
+                "_id": "TASK-001",
+                "id": "TASK-001",
+                "ownerId": "demo-farmer-01",
+                "farmId": "FARM-001",
+                "fieldId": "FIELD-001",
+                "title": "Irrigate North Canal Wheat (Light Furrow 35mm)",
+                "description": "Critical moisture deficit detected at flowering stage. Execute light furrow irrigation. Confirm manual valve checklist before pump actuation.",
+                "category": "irrigation",
+                "priority": "high",
+                "status": "todo",
+                "assigneeName": "Rajesh Patel (Lead Farmer)",
+                "assigneeId": "demo-farmer-01",
+                "dueDate": "2026-10-29",
+                "linkedAlertId": "ALERT-001",
+                "safetyInterlockRequired": True,
+                "safetyConfirmedBy": None,
+                "comments": [
+                    {
+                        "id": "comm_01",
+                        "authorId": "advisor-01",
+                        "authorName": "Dr. Meera Sharma (Agri Advisor)",
+                        "authorRole": "advisor",
+                        "content": "Flowering is the highest critical water sensitivity window for HD-2967 wheat. Avoid over-ponding to prevent root rot.",
+                        "createdAt": "2026-10-28T10:00:00Z"
+                    }
+                ],
+                "createdAt": "2026-10-28T09:30:15Z",
+                "updatedAt": "2026-10-28T10:00:00Z"
+            },
+            {
+                "_id": "TASK-002",
+                "id": "TASK-002",
+                "ownerId": "demo-farmer-01",
+                "farmId": "FARM-001",
+                "fieldId": "FIELD-002",
+                "title": "Clean & Recalibrate Capacitive Soil Probe",
+                "description": "Routine 30-day preventative maintenance for ESP32 probe node in Tubewell Mustard Basin.",
+                "category": "sensor_maintenance",
+                "priority": "medium",
+                "status": "in_progress",
+                "assigneeName": "Vikram Singh (IoT Technician)",
+                "assigneeId": "tech-01",
+                "dueDate": "2026-10-31",
+                "linkedAlertId": None,
+                "safetyInterlockRequired": False,
+                "safetyConfirmedBy": None,
+                "comments": [],
+                "createdAt": "2026-10-28T08:00:00Z",
+                "updatedAt": "2026-10-28T08:30:00Z"
+            }
+        ]
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -194,6 +249,7 @@ app.include_router(alerts.router, prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(feedback.router, prefix=settings.API_V1_STR)
+app.include_router(tasks.router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn

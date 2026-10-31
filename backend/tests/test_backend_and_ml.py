@@ -168,6 +168,79 @@ def test_fastapi_health_endpoint():
     assert data["status"] == "ok"
     assert "smart-precision-agriculture-fastapi" in data["service"]
 
+def test_task_collaboration_and_safety_interlock():
+    client = TestClient(app)
+    # 1. Create a task
+    create_res = client.post("/api/v1/tasks", json={
+        "title": "Inspect Sluice Gate Valve North Canal",
+        "description": "Manual physical check required before opening gate.",
+        "farmId": "FARM-001",
+        "fieldId": "FIELD-001",
+        "category": "irrigation",
+        "priority": "high",
+        "assigneeName": "Rajesh Patel (Lead Farmer)",
+        "safetyInterlockRequired": True
+    })
+    assert create_res.status_code == 201
+    task_data = create_res.json()
+    task_id = task_data["id"]
+    assert task_data["status"] == "todo"
+    assert task_data["safetyInterlockRequired"] is True
+
+    # 2. Add collaboration note
+    comment_res = client.post(f"/api/v1/tasks/{task_id}/comments", json={
+        "authorName": "Dr. Meera Sharma",
+        "authorRole": "advisor",
+        "content": "Verify root-zone moisture sensor before actuation."
+    })
+    assert comment_res.status_code == 201
+    assert "Verify root-zone moisture" in comment_res.json()["content"]
+
+    # 3. Update task status with safety confirmation
+    patch_res = client.patch(f"/api/v1/tasks/{task_id}", json={
+        "status": "completed",
+        "safetyConfirmedBy": "Rajesh Patel (Lead Farmer)"
+    })
+    assert patch_res.status_code == 200
+    updated = patch_res.json()
+    assert updated["status"] == "completed"
+    assert updated["safetyConfirmedBy"] == "Rajesh Patel (Lead Farmer)"
+
+    # 4. Filter tasks
+    list_res = client.get("/api/v1/tasks?category=irrigation")
+    assert list_res.status_code == 200
+    assert list_res.json()["total"] >= 1
+
+def test_farms_and_fields_compatibility():
+    client = TestClient(app)
+    # Test camelCase and snake_case compatibility for farm creation
+    farm_res = client.post("/api/v1/farms", json={
+        "name": "Barabanki Organic Parcel",
+        "district": "Barabanki",
+        "state": "Uttar Pradesh",
+        "soilType": "alluvial",
+        "areaHectares": 3.8
+    })
+    assert farm_res.status_code == 201
+    farm_id = farm_res.json()["_id"]
+    assert farm_res.json()["soil_type"] == "alluvial"
+    assert farm_res.json()["area"] == 3.8
+
+    # Test camelCase and snake_case compatibility for field creation
+    field_res = client.post(f"/api/v1/farms/{farm_id}/fields", json={
+        "name": "Barabanki Mustard A",
+        "crop": "Mustard",
+        "variety": "Pusa Bold",
+        "sowingDate": "2026-10-15",
+        "growthStage": "vegetative",
+        "areaHectares": 1.5,
+        "moistureThreshold": 22.0
+    })
+    assert field_res.status_code == 201
+    field_data = field_res.json()
+    assert field_data["crop"] == "Mustard"
+    assert field_data["moisture_threshold"] == 22.0
+
 if __name__ == "__main__":
     print("Running M17 Testing & Validation Suite...")
     test_telemetry_calibration_and_duplicate_detection()
@@ -182,4 +255,8 @@ if __name__ == "__main__":
     print("[PASS] Decision safety boundary and alert deduplication passed")
     test_fastapi_health_endpoint()
     print("[PASS] FastAPI health endpoint passed")
-    print("\nALL 6 TEST SUITES PASSED SUCCESSFULLY!")
+    test_task_collaboration_and_safety_interlock()
+    print("[PASS] Task collaboration and safety interlock passed")
+    test_farms_and_fields_compatibility()
+    print("[PASS] Farms and fields compatibility passed")
+    print("\nALL 8 TEST SUITES PASSED SUCCESSFULLY!")

@@ -30,7 +30,8 @@ async def create_farm(payload: FarmCreate):
 
     district = payload.district or (payload.location.district if payload.location else "Karnal District")
     state_loc = payload.state or (payload.location.state if payload.location else "Uttar Pradesh")
-    area = float(payload.area_hectares or 2.5)
+    soil_type = payload.soilType or payload.soil_type or "loamy"
+    area = float(payload.areaHectares if payload.areaHectares is not None else (payload.area_hectares if payload.area_hectares is not None else (payload.area or 2.5)))
 
     now_iso = datetime.utcnow().isoformat() + "Z"
     farm_id = f"FARM-00{len(db_instance.memory_store['farms']) + 1}"
@@ -40,7 +41,7 @@ async def create_farm(payload: FarmCreate):
         "user_id": payload.ownerId or "demo-farmer-01",
         "name": name,
         "location": {"district": district, "state": state_loc},
-        "soil_type": payload.soil_type or "loamy",
+        "soil_type": soil_type,
         "area": area,
         "created_at": now_iso
     }
@@ -74,16 +75,21 @@ async def create_field_for_farm(farm_id: str, payload: FieldCreate):
     now_iso = datetime.utcnow().isoformat() + "Z"
     field_id = f"FIELD-00{len(db_instance.memory_store['fields']) + 1}"
 
+    sowing_date = payload.sowingDate or payload.sowing_date or datetime.utcnow().strftime("%Y-%m-%d")
+    growth_stage = payload.growthStage or payload.growth_stage or "seedling"
+    area = float(payload.areaHectares if payload.areaHectares is not None else (payload.area if payload.area is not None else 1.0))
+    moisture_threshold = float(payload.moistureThreshold if payload.moistureThreshold is not None else (payload.moisture_threshold if payload.moisture_threshold is not None else 24.0))
+
     field_doc = {
         "_id": field_id,
         "farm_id": farm_id,
         "name": payload.name,
         "crop": payload.crop,
         "variety": payload.variety,
-        "sowing_date": payload.sowing_date,
-        "growth_stage": payload.growth_stage,
-        "area": payload.area,
-        "moisture_threshold": payload.moisture_threshold,
+        "sowing_date": sowing_date,
+        "growth_stage": growth_stage,
+        "area": area,
+        "moisture_threshold": moisture_threshold,
         "soil_characteristics": payload.soil_characteristics.model_dump() if payload.soil_characteristics else {
             "phTarget": 6.8,
             "organicMatterPct": 2.1,

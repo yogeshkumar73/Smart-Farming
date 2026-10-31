@@ -170,15 +170,18 @@ export const FarmsFieldsView: React.FC<FarmsFieldsViewProps> = ({
               htmlFor="new-farm-name"
               className="block text-xs font-semibold text-slate-700 mb-1"
             >
-              Farm Name
+              Farm Name *
             </label>
             <input
               id="new-farm-name"
               type="text"
+              required
+              minLength={2}
+              maxLength={100}
               value={farmName}
               onChange={(e) => setFarmName(e.target.value)}
               placeholder="e.g., West Canal Farm"
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -186,14 +189,15 @@ export const FarmsFieldsView: React.FC<FarmsFieldsViewProps> = ({
               htmlFor="new-farm-district"
               className="block text-xs font-semibold text-slate-700 mb-1"
             >
-              District
+              District *
             </label>
             <input
               id="new-farm-district"
               type="text"
+              required
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -282,15 +286,18 @@ export const FarmsFieldsView: React.FC<FarmsFieldsViewProps> = ({
               htmlFor="new-field-name"
               className="block text-xs font-semibold text-slate-700 mb-1"
             >
-              Field Parcel Name
+              Field Parcel Name *
             </label>
             <input
               id="new-field-name"
               type="text"
+              required
+              minLength={2}
+              maxLength={120}
               value={fieldName}
               onChange={(e) => setFieldName(e.target.value)}
               placeholder="e.g., South Plot D"
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -298,14 +305,15 @@ export const FarmsFieldsView: React.FC<FarmsFieldsViewProps> = ({
               htmlFor="new-field-crop"
               className="block text-xs font-semibold text-slate-700 mb-1"
             >
-              Crop
+              Crop *
             </label>
             <input
               id="new-field-crop"
               type="text"
+              required
               value={crop}
               onChange={(e) => setCrop(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -313,14 +321,15 @@ export const FarmsFieldsView: React.FC<FarmsFieldsViewProps> = ({
               htmlFor="new-field-variety"
               className="block text-xs font-semibold text-slate-700 mb-1"
             >
-              Seed Variety
+              Seed Variety *
             </label>
             <input
               id="new-field-variety"
               type="text"
+              required
               value={variety}
               onChange={(e) => setVariety(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
